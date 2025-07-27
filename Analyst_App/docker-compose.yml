@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:13-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: analyst_app
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d analyst_app"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6380:6379"
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      args:
+        PYTHON_VERSION: "3.10"
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://user:password@db:5433/analyst_app
+      COINGECKO_API_BASE_URL: https://api.coingecko.com/api/v3
+      REDIS_URL: redis://redis:6380/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: python -m uvicorn main:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    
+    
+    
+    
+
+volumes:
+  postgres_data:

@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+pydantic-settings
+httpx
+redis
+pytest
+black
+ruff
+mypy
+pytest-docker
+psycopg2
